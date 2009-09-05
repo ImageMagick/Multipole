@@ -1,0 +1,11 @@
+#!/bin/csh
+/bin/cp N-body /tmp/N-body
+set log = bench.`hostname`
+/bin/cp $log $log~
+uname -a > $log
+time /tmp/N-body 32767 3 >>& $log
+time /tmp/N-body 262143 3 >>& $log
+time /tmp/N-body 524287 3 >>& $log
+time /tmp/N-body 1048575 3 >>& $log
+rm -f /tmp/N-body
+Mail cristy@studio.virginimage.org < $log
