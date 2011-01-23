@@ -1,4 +1,5 @@
 # Don't require all the GNU mandated files
+#
 AUTOMAKE_OPTIONS = 1.11 subdir-objects parallel-tests color-tests dist-zip dist-bzip2 dist-xz foreign
 
 topincludedir = @includedir@/Multipole
