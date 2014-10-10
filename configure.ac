@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.62])
+AC_PREREQ([2.69])
 AC_INIT([Multipole], [1.0.0], [http://www.multipole.org], [Multipole])
 AC_CONFIG_SRCDIR([multipole.h])
 AC_CONFIG_HEADERS([config/config.h])
@@ -11,7 +11,10 @@ AC_CANONICAL_TARGET([])
 # Ensure that make can run correctly
 AM_SANITY_CHECK
 
-AM_INIT_AUTOMAKE([1.10.1 subdir-objects dist-zip dist-bzip2 dist-xz foreign])
+AM_INIT_AUTOMAKE([1.12 nostdinc color-tests foreign parallel-tests silent-rules subdir-objects dist-bzip2 dist-lzip dist-xz dist-zip])
+
+# Enable support for silent build rules
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 # Checks for programs.
 AC_PROG_CXX
