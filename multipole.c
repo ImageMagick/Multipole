@@ -14,20 +14,20 @@
 %                                                                             %
 %                                                                             %
 %                           Software Design                                   %
-%                             John Cristy                                     %
+%                               Cristy                                        %
 %                             January 1991                                    %
 %                                                                             %
 %                          Algorithm Analysis                                 %
 %                             Steve Lustig                                    %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2011 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999 ImageMagick Studio LLC, a non-profit organization           %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    http://www.imagemagick.org/script/license.php                            %
+%    https://imagemagick.org/script/license.php                            %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -101,7 +101,7 @@
 %  can be found in these references:
 %
 %    "Computational Simulation of Multi-Body Interactions with O(N) Scaling",
-%    John Cristy and David A. Pensak, Central Research and Development,
+%    Cristy and David A. Pensak, Central Research and Development,
 %    E.I. Du Pont de Nemours, Technical Report, June 1991.
 %
 %    "An O(N) Algorithm for Three-dimensional N-body Simulations", Feng Zhao,
