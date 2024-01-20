@@ -9,6 +9,12 @@ AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir)
 ACLOCAL_AMFLAGS = -I m4
 
 bin_PROGRAMS = multipole
+multipole_SOURCES = multipole.c
+
+check_PROGRAMS = multipole
+
+check-local: multipole
+	./multipole
 
 # Headers which are installed
 pkginclude_HEADERS = multipole.h
