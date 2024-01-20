@@ -307,7 +307,7 @@ static void ComputePhi(Node *node)
             for (j=0; j <= (ssize_t) (cube.precision-i); j++)
               for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
               {
-                sum=cube.x_power[i]*cube.y_power[j]*cube.z_power[k]*
+                sum=(double) cube.x_power[i]*cube.y_power[j]*cube.z_power[k]*
                   cube.one_power[i+j+k]*(*ijk++);
                 *phi+=sum;
                 phi++;
@@ -814,7 +814,8 @@ static void EvaluatePotential(Node *node)
       for (j=0; j <= (ssize_t) (cube.precision-i); j++)
         for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
         {
-          far_potential+=(*psi)*cube.x_power[i]*cube.y_power[j]*cube.z_power[k];
+          far_potential+=(double) (*psi)*cube.x_power[i]*cube.y_power[j]*
+            cube.z_power[k];
           psi++;
         }
     /*
