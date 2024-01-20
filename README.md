@@ -20,12 +20,9 @@ The interactions of each particle in cube i are directly computed and aggregated
 
 A detailed discussion and a formal description of the multipole-expansion algorithm can be found in the following references:
 
-  "Computational Simulation of Multi-Body Interactions with O(N) Scaling",
-  Cristy and David A. Pensak, Central Research and Development,
-  E.I. Du Pont de Nemours, Technical Report, June 1991.
+> "Computational Simulation of Multi-Body Interactions with O(N) Scaling", Cristy and David A. Pensak, Central Research and Development, E.I. Du Pont de Nemours, Technical Report, June 1991.
 
-  "An O(N) Algorithm for Three-dimensional N-body Simulations", Feng Zhao,
-  MIT Artificial Intelligence Lab, Technical Report 995, 1987.
+> "An O(N) Algorithm for Three-dimensional N-body Simulations", Feng Zhao, MIT Artificial Intelligence Lab, Technical Report 995, 1987.
 
 The formula for the lexicographical ordering of a tetrahedral array was
 derived by Richard Merrifield.
