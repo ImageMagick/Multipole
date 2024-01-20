@@ -56,7 +56,7 @@
 #define RAND_MAX  32767
 #endif
 #define TetrahedralArray(array,i,j,k)  \
-  array[cube.tetra_three[i]-cube.tetra_two[(i)+(j)]+(k)]
+  ((double) array[cube.tetra_three[i]-cube.tetra_two[(i)+(j)]+(k)])
 #ifndef True
 #define True  1
 #endif
