@@ -139,22 +139,22 @@ static Cube
 %
 %  The format of the Binomial routine is:
 %
-%    Binomial(long n,long k)
+%    Binomial(ssize_t n,ssize_t k)
 %
 %  A description of each parameter follows:
 %
-%    o n,k: Specifies an unsigned long.
+%    o n,k: Specifies an size_t.
 %
 %
 */
-static unsigned long Binomial(long n,long k)
+static inline size_t Binomial(const ssize_t n,ssize_t k)
 {
-  register long
+  size_t
+    binomial;
+
+  ssize_t
     i,
     j;
-
-  unsigned long
-    binomial;
 
   if (n < k)
     return(0);
@@ -163,7 +163,7 @@ static unsigned long Binomial(long n,long k)
   j=n;
   for (i=1; i <= k; i++)
   {
-    binomial=(unsigned long) ((binomial*(float) j/i)+0.5);
+    binomial=(size_t) ((binomial*(float) j/i)+0.5);
     j--;
   }
   return(binomial);
@@ -185,7 +185,7 @@ static unsigned long Binomial(long n,long k)
 %
 %  The format of the Classification routine is:
 %
-%    Classification(Particle *particles,unsigned long number_particles)
+%    Classification(Particle *particles,const size_t number_particles)
 %
 %  A description of each parameter follows:
 %
@@ -194,29 +194,29 @@ static unsigned long Binomial(long n,long k)
 %    o number_particles: The number of particules in the Particles array.
 %
 */
-static void Classification(Particle *particles,unsigned long number_particles)
+static void Classification(Particle *particles,const size_t number_particles)
 {
-  register long
+  Node
+    *node;
+
+  Particle
+    *p;
+
+  size_t
+    id;
+
+  ssize_t
     i,
     level;
 
-  register Node
-    *node;
-
-  register Particle
-    *p;
-
-  unsigned long
-    id;
-
   p=particles;
-  for (i=0; i < (long) number_particles; i++)
+  for (i=0; i < (ssize_t) number_particles; i++)
   {
     /*
       Descend the tree to a particular leaf node.
     */
     node=cube.root;
-    for (level=1; level < (long) cube.depth; level++)
+    for (level=1; level < (ssize_t) cube.depth; level++)
     {
       id=(p->x > node->mid_x) | (p->y > node->mid_y) << 1 |
         (p->z > node->mid_z) << 2;
@@ -244,39 +244,35 @@ static void Classification(Particle *particles,unsigned long number_particles)
 %
 %  The format of the ComputePhi routine is:
 %
-%    ComputePhi(register Node *node)
+%    ComputePhi(Node *node)
 %
 %  A description of each parameter follows:
 %
 %    o node: Specifies a pointer to a Node structure.
 %
 */
-static void ComputePhi(register Node *node)
+static void ComputePhi(Node *node)
 {
   double
+    sum,
     x_distance,
     y_distance,
     z_distance;
 
-  long
-    i,
-    j,
-    k;
-
-  register double
-    sum;
-
-  register float
+  float
     *ijk,
     *phi;
 
-  register long
+  size_t
+    id;
+
+  ssize_t
     a,
     b,
-    g;
-
-  unsigned long
-    id;
+    g,
+    i,
+    j,
+    k;
 
   /*
     Recursively descend the particle cube.
@@ -287,7 +283,7 @@ static void ComputePhi(register Node *node)
   if (node->level == (cube.depth-1))
     if (node->particle != (Particle *) NULL)
       {
-        register Particle
+        Particle
           *p;
 
         /*
@@ -299,7 +295,7 @@ static void ComputePhi(register Node *node)
           x_distance=p->x-node->mid_x;
           y_distance=p->y-node->mid_y;
           z_distance=p->z-node->mid_z;
-          for (i=0; i <= (long) cube.precision; i++)
+          for (i=0; i <= (ssize_t) cube.precision; i++)
           {
             cube.x_power[i]=pow(x_distance,(double) i);
             cube.y_power[i]=pow(y_distance,(double) i);
@@ -307,9 +303,9 @@ static void ComputePhi(register Node *node)
           }
           phi=node->phi;
           ijk=cube.ijk_factorial;
-          for (i=0; i <= (long) cube.precision; i++)
-            for (j=0; j <= (long) (cube.precision-i); j++)
-              for (k=0; k <= (long) (cube.precision-i-j); k++)
+          for (i=0; i <= (ssize_t) cube.precision; i++)
+            for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+              for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
               {
                 sum=cube.x_power[i]*cube.y_power[j]*cube.z_power[k]*
                   cube.one_power[i+j+k]*(*ijk++);
@@ -329,9 +325,9 @@ static void ComputePhi(register Node *node)
       */
       MultipoleExpansion(node,node->parent,cube.phi_tilde);
       phi=node->parent->phi;
-      for (i=0; i <= (long) cube.precision; i++)
-        for (j=0; j <= (long) (cube.precision-i); j++)
-          for (k=0; k <= (long) (cube.precision-i-j); k++)
+      for (i=0; i <= (ssize_t) cube.precision; i++)
+        for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+          for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
           {
             sum=0.0;
             for (a=0; a <= i; a++)
@@ -362,47 +358,41 @@ static void ComputePhi(register Node *node)
 %
 %  The format of the ComputePsi routine is:
 %
-%    ComputePsi(register Node *node)
+%    ComputePsi(Node *node)
 %
 %  A description of each parameter follows:
 %
 %    o node: Specifies a pointer to a Node structure.
 %
 */
-static void ComputePsi(register Node *node)
+static void ComputePsi(Node *node)
 {
   double
+    sum,
     x_distance,
     y_distance,
     z_distance;
 
-  long
-    i,
-    j,
-    k,
-    n;
-
-  Node
-    *parent;
-
-  register long
-    a,
-    b,
-    g;
-
-  register double
-    sum;
-
-  register float
+  float
     *ijk,
     *phi,
     *psi;
 
-  register Node
-    **interactive_neighbor;
+  Node
+    **interactive_neighbor,
+    *parent;
 
-  unsigned long
+  size_t
     id;
+
+  ssize_t
+    a,
+    b,
+    g,
+    i,
+    j,
+    k,
+    n;
 
   if (node->level == (cube.depth-1))
     {
@@ -423,15 +413,15 @@ static void ComputePsi(register Node *node)
         psi=node->psi;
         phi=(*interactive_neighbor)->phi;
         ijk=cube.ijk_factorial;
-        for (i=0; i <= (long) cube.precision; i++)
-          for (j=0; j <= (long) (cube.precision-i); j++)
-            for (k=0; k <= (long) (cube.precision-i-j); k++)
+        for (i=0; i <= (ssize_t) cube.precision; i++)
+          for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+            for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
             {
               sum=0.0;
               n=i+j+k;
-              for (a=0; a <= (long) (cube.precision-n); a++)
-                for (b=0; b <= (long) (cube.precision-n-a); b++)
-                  for (g=0; g <= (long) (cube.precision-n-a-b); g++)
+              for (a=0; a <= (ssize_t) (cube.precision-n); a++)
+                for (b=0; b <= (ssize_t) (cube.precision-n-a); b++)
+                  for (g=0; g <= (ssize_t) (cube.precision-n-a-b); g++)
                     sum+=TetrahedralArray(phi,a,b,g)*
                       TetrahedralArray(cube.psi_tilde,i+a,j+b,k+g);
               *psi+=sum*(*ijk++);
@@ -448,7 +438,7 @@ static void ComputePsi(register Node *node)
       x_distance=node->mid_x-parent->mid_x;
       y_distance=node->mid_y-parent->mid_y;
       z_distance=node->mid_z-parent->mid_z;
-      for (i=0; i <= (long) cube.precision; i++)
+      for (i=0; i <= (ssize_t) cube.precision; i++)
       {
         cube.x_power[i]=pow(x_distance,(double) i);
         cube.y_power[i]=pow(y_distance,(double) i);
@@ -456,15 +446,15 @@ static void ComputePsi(register Node *node)
       }
       psi=node->psi;
       ijk=cube.ijk_factorial;
-      for (i=0; i <= (long) cube.precision; i++)
-        for (j=0; j <= (long) (cube.precision-i); j++)
-          for (k=0; k <= (long) (cube.precision-i-j); k++)
+      for (i=0; i <= (ssize_t) cube.precision; i++)
+        for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+          for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
           {
             sum=0.0;
             n=i+j+k;
-            for (a=0; a <= (long) (cube.precision-n); a++)
-              for (b=0; b <= (long) (cube.precision-n-a); b++)
-                for (g=0; g <= (long) (cube.precision-n-a-b); g++)
+            for (a=0; a <= (ssize_t) (cube.precision-n); a++)
+              for (b=0; b <= (ssize_t) (cube.precision-n-a); b++)
+                for (g=0; g <= (ssize_t) (cube.precision-n-a-b); g++)
                   sum+=TetrahedralArray(parent->psi,i+a,j+b,k+g)*
                     TetrahedralArray(cube.ijk_factorial,a,b,g)*
                     cube.x_power[a]*cube.y_power[b]*cube.z_power[g];
@@ -493,15 +483,15 @@ static void ComputePsi(register Node *node)
           LocalExpansion(*interactive_neighbor,node,cube.psi_tilde);
           psi=node->psi;
           phi=(*interactive_neighbor)->phi;
-          for (i=0; i <= (long) cube.precision; i++)
-            for (j=0; j <= (long) (cube.precision-i); j++)
-              for (k=0; k <= (long) (cube.precision-i-j); k++)
+          for (i=0; i <= (ssize_t) cube.precision; i++)
+            for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+              for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
               {
                 sum=0.0;
                 n=i+j+k;
-                for (a=0; a <= (long) (cube.precision-n); a++)
-                  for (b=0; b <= (long) (cube.precision-n-a); b++)
-                    for (g=0; g <= (long) (cube.precision-n-a-b); g++)
+                for (a=0; a <= (ssize_t) (cube.precision-n); a++)
+                  for (b=0; b <= (ssize_t) (cube.precision-n-a); b++)
+                    for (g=0; g <= (ssize_t) (cube.precision-n-a-b); g++)
                       sum+=TetrahedralArray(phi,a,b,g)*
                         TetrahedralArray(cube.psi_tilde,i+a,j+b,k+g);
                 *psi+=sum;
@@ -517,22 +507,22 @@ static void ComputePsi(register Node *node)
         x_distance=node->mid_x-parent->mid_x;
         y_distance=node->mid_y-parent->mid_y;
         z_distance=node->mid_z-parent->mid_z;
-        for (i=0; i <= (long) cube.precision; i++)
+        for (i=0; i <= (ssize_t) cube.precision; i++)
         {
           cube.x_power[i]=pow(x_distance,(double) i);
           cube.y_power[i]=pow(y_distance,(double) i);
           cube.z_power[i]=pow(z_distance,(double) i);
         }
         psi=node->psi;
-        for (i=0; i <= (long) cube.precision; i++)
-          for (j=0; j <= (long) (cube.precision-i); j++)
-            for (k=0; k <= (long) (cube.precision-i-j); k++)
+        for (i=0; i <= (ssize_t) cube.precision; i++)
+          for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+            for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
             {
               sum=0.0;
               n=i+j+k;
-              for (a=0; a <= (long) (cube.precision-n); a++)
-                for (b=0; b <= (long) (cube.precision-n-a); b++)
-                  for (g=0; g <= (long) (cube.precision-n-a-b); g++)
+              for (a=0; a <= (ssize_t) (cube.precision-n); a++)
+                for (b=0; b <= (ssize_t) (cube.precision-n-a); b++)
+                  for (g=0; g <= (ssize_t) (cube.precision-n-a-b); g++)
                     sum+=TetrahedralArray(parent->psi,i+a,j+b,k+g)*
                       TetrahedralArray(cube.ijk_factorial,a,b,g)*
                       cube.x_power[a]*cube.y_power[b]*cube.z_power[g];
@@ -563,19 +553,19 @@ static void ComputePsi(register Node *node)
 %
 %  The format of the CreateCube routine is:
 %
-%    CreateCube(register Node *node)
+%    CreateCube(Node *node)
 %
 %  A description of each parameter follows:
 %
 %    o node: Specifies a pointer to a Node structure.
 %
 */
-static void CreateCube(register Node *node)
+static void CreateCube(Node *node)
 {
-  register double
+  double
     bisect;
 
-  register unsigned long
+  size_t
     id,
     level;
 
@@ -623,13 +613,13 @@ static void CreateCube(register Node *node)
 %    o node: Specifies a pointer to a Node structure.
 %
 */
-static void DefineInteractiveField(register Node *node)
+static void DefineInteractiveField(Node *node)
 {
-  register Node
+  Node
     **interactive_neighbor,
     **near_neighbor;
 
-  register unsigned long
+  size_t
     id,
     super_node;
 
@@ -659,7 +649,7 @@ static void DefineInteractiveField(register Node *node)
               interactive_neighbor++;
             }
         super_node=False;  /* for our benchmark, turn supernode off */
-        if (super_node)
+        if (super_node != False)
           {
             /*
               Supernode:  All 8 children represented by this node.
@@ -698,9 +688,9 @@ static void DefineInteractiveField(register Node *node)
 %    o node: Specifies a pointer to a Node structure.
 %
 */
-static void DefineNearField(register Node *node)
+static void DefineNearField(Node *node)
 {
-  register unsigned long
+  size_t
     id;
 
   /*
@@ -771,14 +761,14 @@ static void Error(char *message,char *qualifier)
 %
 %  The format of the EvaluatePotential routine is:
 %
-%    EvaluatePotential(register Node *node)
+%    EvaluatePotential(Node *node)
 %
 %  A description of each parameter follows:
 %
 %    o node: Specifies a pointer to a Node structure.
 %
 */
-static void EvaluatePotential(register Node *node)
+static void EvaluatePotential(Node *node)
 {
   double
     distance_squared,
@@ -788,20 +778,20 @@ static void EvaluatePotential(register Node *node)
     y_distance,
     z_distance;
 
-  register float
+  float
     *psi;
 
-  register long
+  Node
+    **near_neighbor;
+
+  Particle
+    *p,
+    *q;
+
+  ssize_t
     i,
     j,
     k;
-
-  register Node
-    **near_neighbor;
-
-  register Particle
-    *p,
-    *q;
 
   far_potential=0.0;
   near_potential=0.0;
@@ -813,16 +803,16 @@ static void EvaluatePotential(register Node *node)
     x_distance=p->x-node->mid_x;
     y_distance=p->y-node->mid_y;
     z_distance=p->z-node->mid_z;
-    for (i=0; i <= (long) cube.precision; i++)
+    for (i=0; i <= (ssize_t) cube.precision; i++)
     {
       cube.x_power[i]=pow(x_distance,(double) i);
       cube.y_power[i]=pow(y_distance,(double) i);
       cube.z_power[i]=pow(z_distance,(double) i);
     }
     psi=node->psi;
-    for (i=0; i <= (long) cube.precision; i++)
-      for (j=0; j <= (long) (cube.precision-i); j++)
-        for (k=0; k <= (long) (cube.precision-i-j); k++)
+    for (i=0; i <= (ssize_t) cube.precision; i++)
+      for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+        for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
         {
           far_potential+=(*psi)*cube.x_power[i]*cube.y_power[j]*cube.z_power[k];
           psi++;
@@ -883,7 +873,7 @@ static void EvaluatePotential(register Node *node)
 %
 %  The format of the FindNeighbors routine is:
 %
-%    FindNeighbors(register Node *node,register Node *reference_node)
+%    FindNeighbors(Node *node,Node *reference_node)
 %
 %  A description of each parameter follows:
 %
@@ -892,17 +882,15 @@ static void EvaluatePotential(register Node *node)
 %    o reference_node: Specifies a pointer to a Node structure.
 %
 */
-static void FindNeighbors(register Node *node,register Node *reference_node)
+static void FindNeighbors(Node *node,Node *reference_node)
 {
-  register double
-    distance_squared;
-
-  register double
+  double
+    distance_squared,
     x_distance,
     y_distance,
     z_distance;
 
-  unsigned long
+  size_t
     id;
 
   /*
@@ -947,8 +935,8 @@ static void FindNeighbors(register Node *node,register Node *reference_node)
 %
 %  The format of the InitializeNode routine is:
 %
-%      node=InitializeNode(unsigned long id,unsigned long level,Node *parent,
-%        double mid_x,double mid_y,double mid_z)
+%      node=InitializeNode(const size_t id,const size_t level,Node *parent,
+%        const double mid_x,const double mid_y,const double mid_z)
 %
 %  A description of each parameter follows.
 %
@@ -967,18 +955,18 @@ static void FindNeighbors(register Node *node,register Node *reference_node)
 %    o mid_z: Specifies the mid point of the z extent for this node.
 %
 */
-static Node *InitializeNode(unsigned long id,unsigned long level,Node *parent,
-  double mid_x,double mid_y,double mid_z)
+static Node *InitializeNode(const size_t id,const size_t level,
+  Node *parent,const double mid_x,const double mid_y,const double mid_z)
 {
-  register float
+  float
     *phi,
     *psi;
 
-  register long
-    i;
-
-  register Node
+  Node
     *node;
+
+  ssize_t
+    i;
 
   if (cube.free_nodes == 0)
     {
@@ -1027,7 +1015,7 @@ static Node *InitializeNode(unsigned long id,unsigned long level,Node *parent,
   */
   phi=node->phi;
   psi=node->psi;
-  for (i=0; i < (long) cube.coefficients; i++)
+  for (i=0; i < (ssize_t) cube.coefficients; i++)
   {
     *phi++=0.0;
     *psi++=0.0;
@@ -1060,7 +1048,7 @@ static Node *InitializeNode(unsigned long id,unsigned long level,Node *parent,
 %
 %  The format of the InNearField routine is:
 %
-%    InNearField(register Node *reference_node,register Node *node)
+%    InNearField(Node *reference_node,Node *node)
 %
 %  A description of each parameter follows:
 %
@@ -1069,10 +1057,10 @@ static Node *InitializeNode(unsigned long id,unsigned long level,Node *parent,
 %    o node: Specifies a pointer to a Node structure.
 %
 */
-static unsigned long InNearField(register Node *reference_node,
-  register Node *node)
+static size_t InNearField(Node *reference_node,
+  Node *node)
 {
-  register Node
+  Node
     **near_neighbor;
 
   if (reference_node == node)
@@ -1124,6 +1112,7 @@ static void LocalExpansion(Node *interactive_neighbor,Node *node,
 {
   double
     distance,
+    sum,
     tau_x,
     tau_y,
     tau_z,
@@ -1131,22 +1120,17 @@ static void LocalExpansion(Node *interactive_neighbor,Node *node,
     y_distance,
     z_distance;
 
-  long
+  float
+    *ijk;
+
+  ssize_t
+    a,
+    b,
+    g,
     i,
     j,
     k,
     n;
-
-  register double
-    sum;
-
-  register float
-    *ijk;
-
-  register long
-    a,
-    b,
-    g;
 
   static float
     r_zero[HighestDegreeHarmonic+1];
@@ -1162,7 +1146,7 @@ static void LocalExpansion(Node *interactive_neighbor,Node *node,
   tau_x=2.0*(x_distance/distance);
   tau_y=2.0*(y_distance/distance);
   tau_z=2.0*(z_distance/distance);
-  for (i=0; i <= (long) cube.precision; i++)
+  for (i=0; i <= (ssize_t) cube.precision; i++)
   {
     cube.x_power[i]=pow(tau_x,(double) i);
     cube.y_power[i]=pow(tau_y,(double) i);
@@ -1170,9 +1154,9 @@ static void LocalExpansion(Node *interactive_neighbor,Node *node,
     r_zero[i]=1.0/pow(distance,(double) i+1);
   }
   ijk=cube.ijk_factorial;
-  for (i=0; i <= (long) cube.precision; i++)
-    for (j=0; j <= (long) (cube.precision-i); j++)
-      for (k=0; k <= (long) (cube.precision-i-j); k++)
+  for (i=0; i <= (ssize_t) cube.precision; i++)
+    for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+      for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
       {
         sum=0.0;
         for (a=0; a <= (i/2); a++)
@@ -1204,7 +1188,7 @@ static void LocalExpansion(Node *interactive_neighbor,Node *node,
 %
 %  The format of the MultipoleExpansion routine is:
 %
-%    MultipoleExpansion(Node *node,Node *parent,register float *phi_tilde)
+%    MultipoleExpansion(Node *node,Node *parent,float *phi_tilde)
 %
 %  A description of each parameter follows:
 %
@@ -1216,18 +1200,17 @@ static void LocalExpansion(Node *interactive_neighbor,Node *node,
 %      multipole expansion for this node.
 %
 */
-static void MultipoleExpansion(Node *node,Node *parent,
-  register float *phi_tilde)
+static void MultipoleExpansion(Node *node,Node *parent,float *phi_tilde)
 {
   double
     x_distance,
     y_distance,
     z_distance;
 
-  register float
+  float
     *ijk;
 
-  register long
+  ssize_t
     i,
     j,
     k;
@@ -1238,16 +1221,16 @@ static void MultipoleExpansion(Node *node,Node *parent,
   x_distance=node->mid_x-parent->mid_x;
   y_distance=node->mid_y-parent->mid_y;
   z_distance=node->mid_z-parent->mid_z;
-  for (i=0; i <= (long) cube.precision; i++)
+  for (i=0; i <= (ssize_t) cube.precision; i++)
   {
     cube.x_power[i]=pow(-x_distance,(double) i);
     cube.y_power[i]=pow(-y_distance,(double) i);
     cube.z_power[i]=pow(-z_distance,(double) i);
   }
   ijk=cube.ijk_factorial;
-  for (i=0; i <= (long) cube.precision; i++)
-    for (j=0; j <= (long) (cube.precision-i); j++)
-      for (k=0; k <= (long) (cube.precision-i-j); k++)
+  for (i=0; i <= (ssize_t) cube.precision; i++)
+    for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+      for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
         *phi_tilde++=cube.x_power[i]*cube.y_power[j]*cube.z_power[k]*(*ijk++);
 }
 
@@ -1268,8 +1251,8 @@ static void MultipoleExpansion(Node *node,Node *parent,
 %  The format of the MultipolePotential routine is:
 %
 %    potential=MultipolePotential(Particle *particles,
-%      unsigned long number_particles,unsigned long precision,
-%      unsigned long tree_depth,double minimum_extent,double maximum_extent)
+%      size_t number_particles,size_t precision,
+%      size_t tree_depth,double minimum_extent,double maximum_extent)
 %
 %  A description of each parameter follows:
 %
@@ -1291,34 +1274,30 @@ static void MultipoleExpansion(Node *node,Node *parent,
 %
 */
 static double MultipolePotential(Particle *particles,
-  unsigned long number_particles,unsigned long precision,
-  unsigned long tree_depth,double minimum_extent,double maximum_extent)
+  const size_t number_particles,const size_t precision,const size_t tree_depth,
+  const double minimum_extent,const double maximum_extent)
 {
   double
-    factorial[HighestDegreeHarmonic+1];
+    factorial[HighestDegreeHarmonic+1],
+    sum;
 
-  long
-    count,
-    start_time;
+  float
+    *ijk,
+    *ijk_binomial;
 
   Nodes
     *nodes;
 
-  register double
-    sum;
+  size_t
+    level;
 
-  register float
-    *ijk,
-    *ijk_binomial;
-
-  register long
+  ssize_t
+    count,
     i,
     j,
     k,
-    n;
-
-  unsigned long
-    level;
+    n,
+    start_time;
 
   (void) fprintf(stderr,"Particles: %lu\n",number_particles);
   cube.precision=precision;
@@ -1332,7 +1311,7 @@ static double MultipolePotential(Particle *particles,
   */
   factorial[0]=1.0;
   sum=1.0;
-  for (i=1; i <= (long) cube.precision; i++)
+  for (i=1; i <= (ssize_t) cube.precision; i++)
   {
     sum*=(double) i;
     factorial[i]=sum;
@@ -1341,16 +1320,16 @@ static double MultipolePotential(Particle *particles,
   if (cube.ijk_factorial == (float *) NULL)
     Error("unable to allocate memory",(char *) NULL);
   ijk=cube.ijk_factorial;
-  for (i=0; i <= (long) cube.precision; i++)
-    for (j=0; j <= (long) (cube.precision-i); j++)
-      for (k=0; k <= (long) (cube.precision-i-j); k++)
+  for (i=0; i <= (ssize_t) cube.precision; i++)
+    for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+      for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
         *ijk++=1.0/(factorial[i]*factorial[j]*factorial[k]);
   /*
     Initialize ijk binomial table: [(-1/2)*(-1/2-1)*(-1/2-2)*...].
   */
   factorial[0]=1.0;
   sum=1.0;
-  for (i=1; i <= (long) cube.precision; i++)
+  for (i=1; i <= (ssize_t) cube.precision; i++)
   {
     sum*=(-0.5-(double) i+1.0);
     factorial[i]=sum;
@@ -1360,27 +1339,27 @@ static double MultipolePotential(Particle *particles,
     Error("unable to allocate memory",(char *) NULL);
   ijk_binomial=cube.ijk_binomial;
   ijk=cube.ijk_factorial;
-  for (i=0; i <= (long) cube.precision; i++)
-    for (j=0; j <= (long) (cube.precision-i); j++)
-      for (k=0; k <= (long) (cube.precision-i-j); k++)
+  for (i=0; i <= (ssize_t) cube.precision; i++)
+    for (j=0; j <= (ssize_t) (cube.precision-i); j++)
+      for (k=0; k <= (ssize_t) (cube.precision-i-j); k++)
         *ijk_binomial++=factorial[i+j+k]*(*ijk++);
   /*
     Initialize binomial coefficient table.
   */
-  for (n=0; n <= (long) cube.precision; n++)
-    for (k=0; k <= (long) cube.precision; k++)
+  for (n=0; n <= (ssize_t) cube.precision; n++)
+    for (k=0; k <= (ssize_t) cube.precision; k++)
       cube.binomial[n][k]=(float) Binomial(n,k);
   /*
     Initialize power of one lookup table.
   */
-  for (i=0; i <= (long) cube.precision; i++)
+  for (i=0; i <= (ssize_t) cube.precision; i++)
     cube.one_power[i]=pow((double) -1.0,(double) i);
   /*
     Initialize Tetrahedral cubic array lookup table.
   */
-  for (i=0; i <= (long) (cube.precision+2); i++)
+  for (i=0; i <= (ssize_t) (cube.precision+2); i++)
     cube.tetra_three[i]=cube.coefficients-Binomial((int) cube.precision-i+2,3);
-  for (i=0; i <= (long) (cube.precision+2); i++)
+  for (i=0; i <= (ssize_t) (cube.precision+2); i++)
     cube.tetra_two[i]=Binomial((int) cube.precision-i+2,2);
   /*
     Allocate Phi' & Psi'.
@@ -1400,7 +1379,7 @@ static double MultipolePotential(Particle *particles,
   else
     {
       cube.depth=0;
-      count=(long) (number_particles >> 3);
+      count=(ssize_t) (number_particles >> 3);
       do
       {
         count>>=3;
@@ -1504,8 +1483,7 @@ static double MultipolePotential(Particle *particles,
 %
 %  The format of the NaivePotential routine is:
 %
-%    potential=NaivePotential(Particle *particles,
-%      long number_particles)
+%    potential=NaivePotential(Particle *particles,const size_t number_particles)
 %
 %  A description of each parameter follows:
 %
@@ -1515,7 +1493,7 @@ static double MultipolePotential(Particle *particles,
 %      particles array.
 %
 */
-static double NaivePotential(Particle *particles,unsigned long number_particles)
+static double NaivePotential(Particle *particles,const size_t number_particles)
 {
   double
     distance_squared,
@@ -1524,13 +1502,13 @@ static double NaivePotential(Particle *particles,unsigned long number_particles)
     y_distance,
     z_distance;
 
-  register int
-    i,
-    j;
-
-  register Particle
+  Particle
     *p,
     *q;
+
+  ssize_t
+    i,
+    j;
 
   /*
     Calculate gravitational total potential.  Use Newton's third law to
@@ -1538,10 +1516,10 @@ static double NaivePotential(Particle *particles,unsigned long number_particles)
   */
   total_potential=0.0;
   p=particles;
-  for (i=0; i < (long) number_particles; i++)
+  for (i=0; i < (ssize_t) number_particles; i++)
   {
     q=p;
-    for (j=(i+1); j < (long) number_particles; j++)
+    for (j=(i+1); j < (ssize_t) number_particles; j++)
     {
       q++;
       x_distance=p->x-q->x;
@@ -1579,10 +1557,10 @@ static double NaivePotential(Particle *particles,unsigned long number_particles)
 %    o seconds: return the number of processor seconds our program has consumed.
 %
 */
-static long ProcessTime(void)
+static ssize_t ProcessTime(void)
 {
 #if defined(mac)
-   return((long) time(0));
+   return((ssize_t) time(0));
 #elif defined(WIN32)
    return(GetTickCount()/1000);
 #else
@@ -1597,7 +1575,7 @@ static long ProcessTime(void)
     usage;
 
   (void) times(&usage);
-  return((long) (usage.tms_utime/CLK_TCK));
+  return((ssize_t) (usage.tms_utime/CLK_TCK));
 #endif
 }
 
@@ -1630,18 +1608,16 @@ char
     minimum_extent,
     naive_potential;
 
-  long
-    start_time;
-
   Particle
     *particles;
 
-  register long
-    i;
-
-  unsigned long
+  size_t
     number_particles,
     precision;
+
+  ssize_t
+    i,
+    start_time;
 
   /*
     Allocate particle array.
@@ -1649,10 +1625,10 @@ char
   application_name=argv[0];
   number_particles=4095;
   if (argc > 1)
-    number_particles=(unsigned long) atol(argv[1]);
+    number_particles=(size_t) atol(argv[1]);
   precision=3;
   if (argc > 2)
-    precision=(unsigned long) atol(argv[2]);
+    precision=(size_t) atol(argv[2]);
   particles=(Particle *) malloc(number_particles*sizeof(Particle));
   if (particles == (Particle *) NULL)
     Error("unable to allocate memory",(char *) NULL);
@@ -1662,7 +1638,7 @@ char
   srand(30428877);  /* must be fixed to obtain proper benchmarked results */
   minimum_extent=MaxRange;
   maximum_extent=MinRange;
-  for (i=0; i < (long) number_particles; i++)
+  for (i=0; i < (ssize_t) number_particles; i++)
   {
     /*
       Define vertexes of the particle cube.

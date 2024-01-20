@@ -1,11 +1,11 @@
 /*
-  Copyright 1999-2011 ImageMagick Studio LLC, a non-profit organization
+  Copyright 1999 ImageMagick Studio LLC, a non-profit organization
   dedicated to making software imaging solutions freely available.
   
   You may not use this file except in compliance with the License.
   obtain a copy of the License at
   
-    http://www.imagemagick.org/script/license.php
+    https://imagemagick.org/script/license.php
   
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  MagickCore methods to interactively animate an image sequence.
+  Multipole methods.
 */
 #ifdef hpux
 #define _HPUX_SOURCE 1
@@ -90,7 +90,7 @@ typedef struct _Node
     *near_field[MaxNodesNearField+1],
     *interactive_field[MaxNodesInteractiveField+8];
 
-  unsigned long
+  size_t
     id,
     level;
 
@@ -123,16 +123,16 @@ typedef struct _Cube
   Node
     *root;
 
-  unsigned long
+  size_t
     depth;
 
-  long
+  ssize_t
     level;
 
   Node
     **near_neighbor;
 
-  unsigned long
+  size_t
     nodes,
     free_nodes;
 
@@ -151,7 +151,7 @@ typedef struct _Cube
     y_power[HighestDegreeHarmonic+1],
     z_power[HighestDegreeHarmonic+1];
 
-  unsigned long
+  size_t
     tetra_two[HighestDegreeHarmonic+3],
     tetra_three[HighestDegreeHarmonic+3],
     precision,
@@ -178,29 +178,30 @@ char
   Forward declarations.
 */
 static double
-  MultipolePotential(Particle *,unsigned long,unsigned long,unsigned long,
-    double,double),
-  NaivePotential(Particle *,unsigned long);
+  MultipolePotential(Particle *,const size_t,const size_t,const size_t,
+    const double,const double),
+  NaivePotential(Particle *,const size_t);
 
-static long
+static ssize_t
   ProcessTime(void);
 
 static Node
-  *InitializeNode(unsigned long,unsigned long,Node *,double,double,double);
+  *InitializeNode(const size_t,const size_t,Node *,const double,
+    const double,const double);
 
-static unsigned long
-  Binomial(long,long),
-  InNearField(register Node *,register Node *);
+static size_t
+  Binomial(const ssize_t,ssize_t),
+  InNearField(Node *,Node *);
 
 static void
-  Classification(Particle *,unsigned long),
-  ComputePhi(register Node *),
-  ComputePsi(register Node *),
-  CreateCube(register Node *),
-  DefineInteractiveField(register Node *),
-  DefineNearField(register Node *),
+  Classification(Particle *,const size_t),
+  ComputePhi(Node *),
+  ComputePsi(Node *),
+  CreateCube(Node *),
+  DefineInteractiveField(Node *),
+  DefineNearField(Node *),
   Error(char *,char *),
   EvaluatePotential(Node *node),
-  FindNeighbors(register Node *,register Node *),
+  FindNeighbors(Node *,Node *),
   LocalExpansion(Node *, Node *,float *),
-  MultipoleExpansion(Node *,Node *,register float *);
+  MultipoleExpansion(Node *,Node *,float *);
