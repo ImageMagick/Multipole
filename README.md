@@ -14,9 +14,9 @@ In the second (downward) phase, we generate local expansions for all cubes at ev
 
 It's important to note that the root node lacks a parent or interactive field, making its local expansion defined as zero. The local expansions are then systematically propagated down the tree. These expansions encapsulate the field contributions from all particles in the system that are not contained within the current node or its closest neighbors.
 
-Ultimately, for each cube i at the finest level n, we assess the local expansion for every particle within cube i. Each local expansion is characterized by the coefficients of a p-term Taylor series. The potential is obtained by directly evaluating this series at each particle. By summing the local expansion at each leaf node, we derive the potential or force arising from all particles beyond the nearest neighbor cubes.
+Ultimately, for each cube `i` at the finest level `n`, we assess the local expansion for every particle within cube `i`. Each local expansion is characterized by the coefficients of a p-term Taylor series. The potential is obtained by directly evaluating this series at each particle. By summing the local expansion at each leaf node, we derive the potential or force arising from all particles beyond the nearest neighbor cubes.
 
-The interactions of each particle in cube i are directly computed and aggregated to produce the potential attributed to the nearest neighbors. Finally, combining the far-field and near-field potentials through summation yields the desired potential.
+The interactions of each particle in cube `i` are directly computed and aggregated to produce the potential attributed to the nearest neighbors. Finally, combining the far-field and near-field potentials through summation yields the desired potential.
 
 A detailed discussion and a formal description of the multipole-expansion algorithm can be found in the following references:
 
