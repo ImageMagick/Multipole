@@ -35,7 +35,7 @@ derived by Richard Merrifield.
 To build and run the multipole program, type
 
 ```
-  ./configure
-  make
-  multipole
+$ ./configure
+$ make
+$ ./multipole
 ```
