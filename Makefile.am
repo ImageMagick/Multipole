@@ -14,7 +14,7 @@ multipole_SOURCES = multipole.c
 check_PROGRAMS = multipole
 
 check-local: multipole
-	./multipole
+	./multipole 65536 4
 
 # Headers which are installed
 pkginclude_HEADERS = multipole.h

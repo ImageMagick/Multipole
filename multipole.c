@@ -1624,10 +1624,10 @@ char
     Allocate particle array.
   */
   application_name=argv[0];
-  number_particles=4095;
+  number_particles=32768;
   if (argc > 1)
     number_particles=(size_t) atol(argv[1]);
-  precision=3;
+  precision=4;
   if (argc > 2)
     precision=(size_t) atol(argv[2]);
   particles=(Particle *) malloc(number_particles*sizeof(Particle));
