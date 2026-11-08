@@ -27,7 +27,7 @@
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    https://imagemagick.org/script/license.php                            %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -110,7 +110,6 @@
 %  The formula for the lexicographical ordering of a tetrahedral array was
 %  derived by Richard Merrifield.
 %
-%
 */
 
 /*
@@ -144,7 +143,6 @@ static Cube
 %  A description of each parameter follows:
 %
 %    o n,k: Specifies an size_t.
-%
 %
 */
 static inline size_t Binomial(const ssize_t n,ssize_t k)
@@ -1109,7 +1107,7 @@ static size_t InNearField(Node *reference_node,
 %
 */
 static void LocalExpansion(Node *interactive_neighbor,Node *node,
- float *psi_tilde)
+  float *psi_tilde)
 {
   double
     distance,
@@ -1593,12 +1591,7 @@ static ssize_t ProcessTime(void)
 %
 %
 */
-int main(argc,argv)
-int
-  argc;
-
-char
-  **argv;
+int main(int argc,char **argv)
 {
 #define MinRange  0.0
 #define MaxRange  255.9999999
