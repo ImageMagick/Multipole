@@ -194,7 +194,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 AM_RECURSIVE_TARGETS = cscope
 am__DIST_COMMON = $(srcdir)/Makefile.in \
-	$(top_srcdir)/config/config.h.in ChangeLog README compile \
+	$(top_srcdir)/config/config.h.in ChangeLog README.md compile \
 	config.guess config.sub depcomp install-sh ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
