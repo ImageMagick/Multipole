@@ -340,7 +340,7 @@ multipole_SOURCES = multipole.c
 pkginclude_HEADERS = multipole.h
 
 # Additional files to distribute
-EXTRA_DIST = ChangeLog version.sh
+EXTRA_DIST = ChangeLog multipole.webp version.sh
 all: all-am
 
 .SUFFIXES:
