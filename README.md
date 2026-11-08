@@ -2,7 +2,7 @@
 <img align="center" src="multipole.webp" alt="Computational Simulation of Multi-Body Interactions with O(N) Scaling" width="820" height="450"/>
 </p>
 
-Multiple is an advanced $O(N)$ N-body simulation framework utilizing a hierarchical multipole algorithm. Designed to calculate interparticle gravitational or electrostatic potentials ($1/r$) for a system of $N$ particles with precision approaching machine round-off limits, this approach achieves linear computational scaling—denoted as $O(N)$—rather than the traditional $O(N^2)$ direct-summation cost. 
+Multipole is an advanced $O(N)$ N-body simulation framework utilizing a hierarchical multipole algorithm. Designed to calculate interparticle gravitational or electrostatic potentials ($1/r$) for a system of $N$ particles with precision approaching machine round-off limits, this approach achieves linear computational scaling—denoted as $O(N)$—rather than the traditional $O(N^2)$ direct-summation cost. 
 
 This scalability enables simulations involving hundreds of thousands to millions of atoms (exceeding $500,000$ particles). Because realistic dynamic simulations frequently demand thousands to millions of time steps, linear computational complexity drastically reduces simulation runtimes, making long-timescale, large-scale multi-body dynamics feasible.
 
