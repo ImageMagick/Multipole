@@ -584,7 +584,7 @@ static void CreateCube(Node *node)
       node->mid_y+(id & 2 ? bisect : -bisect),
       node->mid_z+(id & 4 ? bisect : -bisect));
     if (node->child[id] == (Node *) NULL)
-      Error("unable to allocate memory",(char *) NULL);
+      ThrowMultipoleException("unable to allocate memory",(char *) NULL);
     if (level < (cube.depth-1))
       CreateCube(node->child[id]);
   }
@@ -650,7 +650,8 @@ static void DefineInteractiveField(Node *node)
             {
               if ((interactive_neighbor-node->interactive_field) >=
                   (MaxNodesInteractiveField+7))
-                Error("interactive field overflow",(char *) NULL);
+                ThrowMultipoleException("interactive field overflow",
+                  (char *) NULL);
               *interactive_neighbor=(*near_neighbor)->child[id];
               interactive_neighbor++;
             }
@@ -714,40 +715,6 @@ static void DefineNearField(Node *node)
       FindNeighbors(cube.root,node);
       *cube.near_neighbor=(Node *) NULL;
     }
-}
-
-/*
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%   E r r o r                                                                 %
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  Error() displays an error message and then terminates the program.
-%
-%  The format of the Error routine is:
-%
-%      Error(char *message,char *qualifier)
-%
-%  A description of each parameter follows:
-%
-%    o message: Specifies the message to display before terminating the
-%      program.
-%
-%    o qualifier: Specifies any qualifier to the message.
-%
-*/
-static void Error(const char *message,const char *qualifier)
-{
-  (void) fprintf(stderr,"%s: %s",application_name,message);
-  if (qualifier != (char *) NULL)
-    (void) fprintf(stderr," (%s)",qualifier);
-  (void) fprintf(stderr,".\n");
-  exit(1);
 }
 
 /*
@@ -944,7 +911,7 @@ static void FindNeighbors(Node *node,Node *reference_node)
         {
           if ((cube.near_neighbor-reference_node->near_field) >=
               MaxNodesNearField)
-            Error("near field overflow",(char *) NULL);
+            ThrowMultipoleException("near field overflow",(char *) NULL);
           *cube.near_neighbor=node;
           cube.near_neighbor++;
         }
@@ -1353,7 +1320,7 @@ static double MultipolePotential(Particle *particles,
   }
   cube.ijk_factorial=(float *) malloc(cube.coefficients*sizeof(float));
   if (cube.ijk_factorial == (float *) NULL)
-    Error("unable to allocate memory",(char *) NULL);
+    ThrowMultipoleException("unable to allocate memory",(char *) NULL);
   ijk=cube.ijk_factorial;
   for (i=0; i <= (ssize_t) cube.precision; i++)
     for (j=0; j <= (ssize_t) (cube.precision-i); j++)
@@ -1371,7 +1338,7 @@ static double MultipolePotential(Particle *particles,
   }
   cube.ijk_binomial=(float *) malloc(cube.coefficients*sizeof(float));
   if (cube.ijk_binomial == (float *) NULL)
-    Error("unable to allocate memory",(char *) NULL);
+    ThrowMultipoleException("unable to allocate memory",(char *) NULL);
   ijk_binomial=cube.ijk_binomial;
   ijk=cube.ijk_factorial;
   for (i=0; i <= (ssize_t) cube.precision; i++)
@@ -1403,7 +1370,7 @@ static double MultipolePotential(Particle *particles,
   cube.psi_tilde=(float *) malloc(cube.coefficients*sizeof(float));
   if ((cube.phi_tilde == (float *) NULL) ||
       (cube.psi_tilde == (float *) NULL))
-    Error("unable to allocate memory",(char *) NULL);
+    ThrowMultipoleException("unable to allocate memory",(char *) NULL);
   cube.near_potential=0.0;
   cube.far_potential=0.0;
   /*
@@ -1457,7 +1424,7 @@ static double MultipolePotential(Particle *particles,
     minimum_extent+cube.edge_length[0]*0.5,
     minimum_extent+cube.edge_length[0]*0.5);
   if (cube.root == (Node *) NULL)
-    Error("unable to allocate memory",(char *) NULL);
+    ThrowMultipoleException("unable to allocate memory",(char *) NULL);
   cube.root->parent=cube.root;
   /*
     Multibody steps:
@@ -1610,6 +1577,41 @@ static ssize_t ProcessTime(void)
 %                                                                             %
 %                                                                             %
 %                                                                             %
+%   T h r o w M u l t i p o l e E x c e p t i o n                             %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  ThrowMultipoleException() displays an error message and then terminates the
+%  program.
+%
+%  The format of the ThrowMultipoleException routine is:
+%
+%      ThrowMultipoleException(char *message,char *qualifier)
+%
+%  A description of each parameter follows:
+%
+%    o message: Specifies the message to display before terminating the
+%      program.
+%
+%    o qualifier: Specifies any qualifier to the message.
+%
+*/
+static void ThrowMultipoleException(const char *message,const char *qualifier)
+{
+  (void) fprintf(stderr,"%s: %s",application_name,message);
+  if (qualifier != (char *) NULL)
+    (void) fprintf(stderr," (%s)",qualifier);
+  (void) fprintf(stderr,".\n");
+  exit(1);
+}
+
+/*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%                                                                             %
+%                                                                             %
 %   M a i n                                                                   %
 %                                                                             %
 %                                                                             %
@@ -1674,14 +1676,14 @@ int main(int argc,char **argv)
       return(1);
     }
   if ((argc > 1) && (ParseCount(argv[1],&number_particles) == False))
-    Error("invalid number of particles",argv[1]);
+    ThrowMultipoleException("invalid number of particles",argv[1]);
   if ((argc > 2) && (ParseCount(argv[2],&precision) == False))
-    Error("invalid precision",argv[2]);
+    ThrowMultipoleException("invalid precision",argv[2]);
   if (number_particles > (SIZE_MAX/sizeof(Particle)))
-    Error("too many particles",argv[1]);
+    ThrowMultipoleException("too many particles",argv[1]);
   particles=(Particle *) malloc(Max(number_particles,1)*sizeof(Particle));
   if (particles == (Particle *) NULL)
-    Error("unable to allocate memory",(char *) NULL);
+    ThrowMultipoleException("unable to allocate memory",(char *) NULL);
   /*
     Read particles positions.
   */

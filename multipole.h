@@ -210,10 +210,10 @@ static void
   CreateCube(Node *),
   DefineInteractiveField(Node *),
   DefineNearField(Node *),
-  Error(const char *,const char *),
   EvaluatePotential(Node *node),
   FindNeighbors(Node *,Node *),
   LocalExpansion(Node *, Node *,float *),
-  MultipoleExpansion(Node *,Node *,float *);
+  MultipoleExpansion(Node *,Node *,float *),
+  ThrowMultipoleException(const char *,const char *);
 
 #endif
