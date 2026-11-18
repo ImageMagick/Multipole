@@ -5,7 +5,7 @@
   You may not use this file except in compliance with the License.
   obtain a copy of the License at
   
-    https://imagemagick.org/script/license.php
+    https://imagemagick.org/license/
   
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,22 +15,31 @@
 
   Multipole methods.
 */
+#ifndef MULTIPOLE_H
+#define MULTIPOLE_H
+
 #ifdef hpux
 #define _HPUX_SOURCE 1
 #endif
-#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#if defined(__STDC__) || defined(sgi) || defined(_AIX)
-#include <unistd.h>
-#else
-#include <malloc.h>
-#include <memory.h>
-#endif
+#include <errno.h>
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#if defined(_WIN32) || defined(WIN32)
+#  if defined(_MSC_VER)
+typedef ptrdiff_t ssize_t;
+#  else
+#    include <sys/types.h>
+#  endif
+#else
+#  include <sys/types.h>
+#  include <unistd.h>
+#endif
 /*
   Define declarations for the N-body program.
 */
@@ -51,23 +60,24 @@
 #define MaxNodesNearField  26  /* choose from: 80, 56, 32, 26 */
 #define MaxTreeDepth  8  /* Log2(MaxRange) */
 #define Min(x,y)  (((x) < (y)) ? (x) : (y))
+#define NeighborTolerance  1.0e-4  /* slack for round-off in near-field test */
 #define NodesInAQueue  4681  /* 1+8+64+512+4096 */
 #ifndef RAND_MAX
 #define RAND_MAX  32767
 #endif
 #define TetrahedralArray(array,i,j,k)  \
-  ((double) array[cube.tetra_three[i]-cube.tetra_two[(i)+(j)]+(k)])
+  ((double) (array)[cube.tetra_three[(i)]-cube.tetra_two[(i)+(j)]+(k)])
 #ifndef True
 #define True  1
 #endif
 #define Warning(message,qualifier)  \
 {  \
   (void) fprintf(stderr,"%s: %s",application_name,message);  \
-  if (qualifier != (char *) NULL)  \
+  if ((qualifier) != (const char *) NULL)  \
     (void) fprintf(stderr," (%s)",qualifier);  \
   (void) fprintf(stderr,".\n");  \
 }
-
+
 /*
   Structures.
 */
@@ -144,7 +154,7 @@ typedef struct _Cube
 
   float
     edge_length[MaxTreeDepth],
-    diagonal_length[MaxTreeDepth],
+    diagonal_length[MaxTreeDepth],  /* squared near-field distance threshold */
     binomial[HighestDegreeHarmonic+1][HighestDegreeHarmonic+1],
     one_power[HighestDegreeHarmonic+1],
     x_power[HighestDegreeHarmonic+1],
@@ -172,8 +182,8 @@ typedef struct _Cube
 /*
   Variable declarations.
 */
-char
-  *application_name;
+static char
+  *application_name = "multipole";
 /*
   Forward declarations.
 */
@@ -200,8 +210,10 @@ static void
   CreateCube(Node *),
   DefineInteractiveField(Node *),
   DefineNearField(Node *),
-  Error(char *,char *),
+  Error(const char *,const char *),
   EvaluatePotential(Node *node),
   FindNeighbors(Node *,Node *),
   LocalExpansion(Node *, Node *,float *),
   MultipoleExpansion(Node *,Node *,float *);
+
+#endif

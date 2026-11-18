@@ -115,7 +115,7 @@
 /*
   Include declarations.
 */
-#include <multipole.h>
+#include "multipole.h"
 
 /*
   Global variables.
@@ -154,14 +154,17 @@ static inline size_t Binomial(const ssize_t n,ssize_t k)
     i,
     j;
 
-  if (n < k)
+  if ((k < 0) || (n < k))
     return(0);
   binomial=1;
   k=Min(k,n-k);
   j=n;
   for (i=1; i <= k; i++)
   {
-    binomial=(size_t) ((binomial*(float) j/i)+0.5);
+    /*
+      Exact in integer arithmetic: binomial*j is always divisible by i.
+    */
+    binomial=(binomial*(size_t) j)/(size_t) i;
     j--;
   }
   return(binomial);
@@ -394,6 +397,8 @@ static void ComputePsi(Node *node)
 
   if (node->level == (cube.depth-1))
     {
+      if (node->particle == (Particle *) NULL)
+        return;  /* empty leaf: nothing to evaluate, and it has no children */
       /*
         Form a local expansion by using the `Conversion of Multipole
         into a Local Expansion' lemma to convert the multipole expansion
@@ -643,6 +648,9 @@ static void DefineInteractiveField(Node *node)
             super_node=False;
           else
             {
+              if ((interactive_neighbor-node->interactive_field) >=
+                  (MaxNodesInteractiveField+7))
+                Error("interactive field overflow",(char *) NULL);
               *interactive_neighbor=(*near_neighbor)->child[id];
               interactive_neighbor++;
             }
@@ -733,7 +741,7 @@ static void DefineNearField(Node *node)
 %    o qualifier: Specifies any qualifier to the message.
 %
 */
-static void Error(char *message,char *qualifier)
+static void Error(const char *message,const char *qualifier)
 {
   (void) fprintf(stderr,"%s: %s",application_name,message);
   if (qualifier != (char *) NULL)
@@ -885,6 +893,8 @@ static void FindNeighbors(Node *node,Node *reference_node)
 {
   double
     distance_squared,
+    slack,
+    threshold,
     x_distance,
     y_distance,
     z_distance;
@@ -893,29 +903,52 @@ static void FindNeighbors(Node *node,Node *reference_node)
     id;
 
   /*
-    Recursively descend the particle cube.
+    cube.diagonal_length[] is a squared distance; allow a little slack so
+    corner neighbors are not lost to round-off in the (float) node centers.
   */
+  threshold=(double) cube.diagonal_length[reference_node->level]*
+    (1.0+NeighborTolerance);
+  x_distance=fabs((double) reference_node->mid_x-(double) node->mid_x);
+  y_distance=fabs((double) reference_node->mid_y-(double) node->mid_y);
+  z_distance=fabs((double) reference_node->mid_z-(double) node->mid_z);
   if (node->level < reference_node->level)
-    for (id=0; id < MaxChildren; id++)
-      FindNeighbors(node->child[id],reference_node);
-  if (node->level == reference_node->level)
-    if (node != reference_node)
-      {
-        /*
-          Determine if this node is within the specified distance of the
-          reference node.
-        */
-        x_distance=reference_node->mid_x-node->mid_x;
-        y_distance=reference_node->mid_y-node->mid_y;
-        z_distance=reference_node->mid_z-node->mid_z;
-        distance_squared=x_distance*x_distance+y_distance*y_distance+
-          z_distance*z_distance;
-        if (distance_squared <= cube.diagonal_length[node->level])
-          {
-            *cube.near_neighbor=node;
-            cube.near_neighbor++;
-          }
-      }
+    {
+      /*
+        Descend only into subtrees that can contain a neighbor: every
+        descendant at the reference level lies within `slack' of this
+        node's center along each axis.  Child order (and therefore the
+        order of the near-field list) is unchanged.
+      */
+      slack=0.5*((double) cube.edge_length[node->level]-
+        (double) cube.edge_length[reference_node->level]);
+      x_distance=Max(x_distance-slack,0.0);
+      y_distance=Max(y_distance-slack,0.0);
+      z_distance=Max(z_distance-slack,0.0);
+      distance_squared=x_distance*x_distance+y_distance*y_distance+
+        z_distance*z_distance;
+      if (distance_squared > threshold)
+        return;
+      for (id=0; id < MaxChildren; id++)
+        FindNeighbors(node->child[id],reference_node);
+      return;
+    }
+  if ((node->level == reference_node->level) && (node != reference_node))
+    {
+      /*
+        Determine if this node is within the specified distance of the
+        reference node.
+      */
+      distance_squared=x_distance*x_distance+y_distance*y_distance+
+        z_distance*z_distance;
+      if (distance_squared <= threshold)
+        {
+          if ((cube.near_neighbor-reference_node->near_field) >=
+              MaxNodesNearField)
+            Error("near field overflow",(char *) NULL);
+          *cube.near_neighbor=node;
+          cube.near_neighbor++;
+        }
+    }
 }
 
 /*
@@ -980,12 +1013,15 @@ static Node *InitializeNode(const size_t id,const size_t level,
         return((Node *) NULL);
       nodes->phi=(float *)
         malloc(NodesInAQueue*cube.coefficients*sizeof(float));
-      if (nodes->phi == (float *) NULL)
-        return((Node *) NULL);
       nodes->psi=(float *)
         malloc(NodesInAQueue*cube.coefficients*sizeof(float));
-      if (nodes->phi == (float *) NULL)
-        return((Node *) NULL);
+      if ((nodes->phi == (float *) NULL) || (nodes->psi == (float *) NULL))
+        {
+          free(nodes->phi);
+          free(nodes->psi);
+          free(nodes);
+          return((Node *) NULL);
+        }
       nodes->next=cube.node_queue;
       cube.node_queue=nodes;
       cube.next_node=nodes->nodes;
@@ -1004,9 +1040,9 @@ static Node *InitializeNode(const size_t id,const size_t level,
   node->interactive_field[0]=(Node *) NULL;
   node->id=id;
   node->level=level;
-  node->mid_x=mid_x;
-  node->mid_y=mid_y;
-  node->mid_z=mid_z;
+  node->mid_x=(float) mid_x;
+  node->mid_y=(float) mid_y;
+  node->mid_z=(float) mid_z;
   node->phi=cube.phi;
   node->psi=cube.psi;
   /*
@@ -1131,7 +1167,7 @@ static void LocalExpansion(Node *interactive_neighbor,Node *node,
     k,
     n;
 
-  static float
+  float
     r_zero[HighestDegreeHarmonic+1];
 
   /*
@@ -1298,13 +1334,13 @@ static double MultipolePotential(Particle *particles,
     n,
     start_time;
 
-  (void) fprintf(stderr,"Particles: %lu\n",number_particles);
+  (void) fprintf(stderr,"Particles: %zu\n",number_particles);
   cube.precision=precision;
   if (cube.precision > HighestDegreeHarmonic)
     cube.precision=HighestDegreeHarmonic;
-  (void) fprintf(stderr,"Precision: %lu\n",cube.precision);
+  (void) fprintf(stderr,"Precision: %zu\n",cube.precision);
   cube.coefficients=Binomial((int) cube.precision+3,3);
-  (void) fprintf(stderr,"Coefficients: %lu\n",cube.coefficients);
+  (void) fprintf(stderr,"Coefficients: %zu\n",cube.coefficients);
   /*
     Initialize ijk factorial table.
   */
@@ -1387,16 +1423,21 @@ static double MultipolePotential(Particle *particles,
       while (count > 0);
       if (cube.depth < 1)
         cube.depth=1;
+      if (cube.depth > MaxTreeDepth)
+        cube.depth=MaxTreeDepth;
     }
-  (void) fprintf(stderr,"Cube depth: %lu\n",cube.depth);
+  (void) fprintf(stderr,"Cube depth: %zu\n",cube.depth);
   /*
     Initialize edge length table.
   */
+  cube.edge_length[0]=maximum_extent-minimum_extent;
+  if (cube.edge_length[0] <= 0.0)
+    cube.edge_length[0]=1.0;  /* degenerate extent: avoid a zero-size cube */
   (void) fprintf(stderr,"Cube lower left front vertex: %.8g %.8g %.8g\n",
     minimum_extent,minimum_extent,minimum_extent);
   (void) fprintf(stderr,"Cube upper right behind vertex: %.8g %.8g %.8g\n",
-    maximum_extent,maximum_extent,maximum_extent);
-  cube.edge_length[0]=maximum_extent-minimum_extent;
+    minimum_extent+cube.edge_length[0],minimum_extent+cube.edge_length[0],
+    minimum_extent+cube.edge_length[0]);
   cube.diagonal_length[0]=2.0*CircumscribedSphereRadius*cube.edge_length[0]*
     cube.edge_length[0];
   for (level=1; level < cube.depth; level++)
@@ -1423,46 +1464,46 @@ static double MultipolePotential(Particle *particles,
   */
   (void) fprintf(stderr,"CreateCube: ");
   start_time=ProcessTime();
-  CreateCube(cube.root);
-  (void) fprintf(stderr,"%lds\n",ProcessTime()-start_time);
+  if (cube.depth > 1)
+    CreateCube(cube.root);
+  (void) fprintf(stderr,"%lds\n",(long) (ProcessTime()-start_time));
   (void) fprintf(stderr,"Classification: ");
   start_time=ProcessTime();
   Classification(particles,number_particles);
-  (void) fprintf(stderr,"%lds\n",ProcessTime()-start_time);
+  (void) fprintf(stderr,"%lds\n",(long) (ProcessTime()-start_time));
   (void) fprintf(stderr,"DefineNearField: ");
   start_time=ProcessTime();
   DefineNearField(cube.root);
-  (void) fprintf(stderr,"%lds\n",ProcessTime()-start_time);
+  (void) fprintf(stderr,"%lds\n",(long) (ProcessTime()-start_time));
   (void) fprintf(stderr,"DefineInteractiveField: ");
   start_time=ProcessTime();
   DefineInteractiveField(cube.root);
-  (void) fprintf(stderr,"%lds\n",ProcessTime()-start_time);
+  (void) fprintf(stderr,"%lds\n",(long) (ProcessTime()-start_time));
   (void) fprintf(stderr,"ComputePhi: ");
   start_time=ProcessTime();
   ComputePhi(cube.root);
-  (void) fprintf(stderr,"%lds\n",ProcessTime()-start_time);
+  (void) fprintf(stderr,"%lds\n",(long) (ProcessTime()-start_time));
   (void) fprintf(stderr,"ComputePsi: ");
   start_time=ProcessTime();
   ComputePsi(cube.root);
-  (void) fprintf(stderr,"%lds\n",ProcessTime()-start_time);
+  (void) fprintf(stderr,"%lds\n",(long) (ProcessTime()-start_time));
   (void) fprintf(stderr,"Near: %.8g\nFar: %.8g\n",cube.near_potential,
     cube.far_potential);
   /*
     Release N-body cube tree storage.
   */
-  do
+  while (cube.node_queue != (Nodes *) NULL)
   {
     nodes=cube.node_queue->next;
-    (void) free((char *) cube.node_queue->phi);
-    (void) free((char *) cube.node_queue->psi);
-    (void) free((char *) cube.node_queue);
+    free(cube.node_queue->phi);
+    free(cube.node_queue->psi);
+    free(cube.node_queue);
     cube.node_queue=nodes;
   }
-  while (cube.node_queue != (Nodes *) NULL);
-  (void) free((char *) cube.ijk_factorial);
-  (void) free((char *) cube.ijk_binomial);
-  (void) free((char *) cube.phi_tilde);
-  (void) free((char *) cube.psi_tilde);
+  free(cube.ijk_factorial);
+  free(cube.ijk_binomial);
+  free(cube.phi_tilde);
+  free(cube.psi_tilde);
   return(cube.near_potential+cube.far_potential);
 }
 
@@ -1558,24 +1599,10 @@ static double NaivePotential(Particle *particles,const size_t number_particles)
 */
 static ssize_t ProcessTime(void)
 {
-#if defined(mac)
-   return((ssize_t) time(0));
-#elif defined(WIN32)
-   return(GetTickCount()/1000);
-#else
-#include <sys/times.h>
-#include <limits.h>
-
-#ifndef CLK_TCK
-#define CLK_TCK sysconf(_SC_CLK_TCK)
-#endif
-
-  struct tms
-    usage;
-
-  (void) times(&usage);
-  return((ssize_t) (usage.tms_utime/CLK_TCK));
-#endif
+  /*
+    Processor time in whole seconds (ISO C; no platform-specific headers).
+  */
+  return((ssize_t) (clock()/CLOCKS_PER_SEC));
 }
 
 /*
@@ -1591,6 +1618,27 @@ static ssize_t ProcessTime(void)
 %
 %
 */
+static int ParseCount(const char *text,size_t *value)
+{
+  char
+    *end;
+
+  unsigned long
+    count;
+
+  /*
+    Parse a non-negative decimal integer; reject signs, junk, and overflow.
+  */
+  if (!isdigit((unsigned char) *text))
+    return(False);
+  errno=0;
+  count=strtoul(text,&end,10);
+  if ((errno != 0) || (*end != '\0'))
+    return(False);
+  *value=(size_t) count;
+  return(True);
+}
+
 int main(int argc,char **argv)
 {
 #define MinRange  0.0
@@ -1614,16 +1662,24 @@ int main(int argc,char **argv)
     start_time;
 
   /*
-    Allocate particle array.
+    Parse arguments and allocate particle array.
   */
   application_name=argv[0];
   number_particles=32768;
-  if (argc > 1)
-    number_particles=(size_t) atol(argv[1]);
   precision=4;
-  if (argc > 2)
-    precision=(size_t) atol(argv[2]);
-  particles=(Particle *) malloc(number_particles*sizeof(Particle));
+  if (argc > 3)
+    {
+      (void) fprintf(stderr,"Usage: %s [number_particles [precision]]\n",
+        application_name);
+      return(1);
+    }
+  if ((argc > 1) && (ParseCount(argv[1],&number_particles) == False))
+    Error("invalid number of particles",argv[1]);
+  if ((argc > 2) && (ParseCount(argv[2],&precision) == False))
+    Error("invalid precision",argv[2]);
+  if (number_particles > (SIZE_MAX/sizeof(Particle)))
+    Error("too many particles",argv[1]);
+  particles=(Particle *) malloc(Max(number_particles,1)*sizeof(Particle));
   if (particles == (Particle *) NULL)
     Error("unable to allocate memory",(char *) NULL);
   /*
@@ -1637,9 +1693,9 @@ int main(int argc,char **argv)
     /*
       Define vertexes of the particle cube.
     */
-    particles[i].x=(rand()*((MaxRange-MinRange)+MinRange))/RAND_MAX;
-    particles[i].y=(rand()*((MaxRange-MinRange)+MinRange))/RAND_MAX;
-    particles[i].z=(rand()*((MaxRange-MinRange)+MinRange))/RAND_MAX;
+    particles[i].x=MinRange+(rand()*(MaxRange-MinRange))/RAND_MAX;
+    particles[i].y=MinRange+(rand()*(MaxRange-MinRange))/RAND_MAX;
+    particles[i].z=MinRange+(rand()*(MaxRange-MinRange))/RAND_MAX;
     if (particles[i].x < minimum_extent)
       minimum_extent=particles[i].x;
     if (particles[i].y < minimum_extent)
@@ -1659,13 +1715,13 @@ int main(int argc,char **argv)
   multipole_potential=MultipolePotential(particles,number_particles,precision,
     0,minimum_extent,maximum_extent);
   (void) fprintf(stderr,"The multipole-expansion potential is %.8g (%lds).\n",
-    multipole_potential,ProcessTime()-start_time);
+    multipole_potential,(long) (ProcessTime()-start_time));
   start_time=ProcessTime();
   naive_potential=NaivePotential(particles,number_particles);
   (void) fprintf(stderr,"The naive potential is %.8g (%lds).\n",
-    naive_potential,ProcessTime()-start_time);
+    naive_potential,(long) (ProcessTime()-start_time));
   (void) fprintf(stderr,"The expansion error: %.8g\n\n",
     AbsoluteValue(multipole_potential-naive_potential));
-  (void) free((char *) particles);
-  return(False);
+  free(particles);
+  return(EXIT_SUCCESS);
 }
